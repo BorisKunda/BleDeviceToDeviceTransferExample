@@ -31,12 +31,15 @@ public class MainActivity extends AppCompatActivity {
 
     private final String locPermission = Manifest.permission.ACCESS_FINE_LOCATION;
 
+    private boolean isScanning = false;
+
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
     //private ScanFilter mScanFilter;
     private ScanSettings mScanSettings;
     private ExecutorService bleScanExecutor;
+    private ScanCallback mScanCallback;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -90,31 +93,32 @@ public class MainActivity extends AppCompatActivity {
 
     private void startBleScan () {
 
-        ScanCallback scanCallback = new ScanCallback() {
+        mScanCallback = new ScanCallback() {
 
             @Override
             public void onScanResult (int callbackType, ScanResult result) {
                 super.onScanResult(callbackType, result);
 
-                String scanResultName = result.getDevice().getName();
+                Log.d("BLE SCAN STATUS:", " scanning ");
 
-                if (scanResultName != null && scanResultName.equals("Galaxy S7")) {
-                    Log.d("debug", "onScanResult: ");
-                }
-
-                //BOND_NONE = 10;
-                //BOND_BONDING = 11;
-                //BOND_BONDED = 12;
-
-                // Log.i("ScanCallback", " --------------------------------------------- ");
-                // Log.i("ScanCallback", " Name:" + result.getDevice().getName() + " ");
-                // Log.i("ScanCallback", " Bond:" + result.getDevice().getBondState() + " ");
-                // //  Log.i("ScanCallback", " result:" + result.getDevice().getUuids() + " ");
-                // Log.i("ScanCallback", " --------------------------------------------- ");
             }
         };
 
-        bleScanExecutor.execute(() -> mBluetoothLeScanner.startScan(null, mScanSettings, scanCallback));
+        if (!isScanning) {
+            isScanning = true;
+            bleScanExecutor.execute(() -> mBluetoothLeScanner.startScan(null, mScanSettings, mScanCallback));
+        }
+
+
+    }
+
+    private void stopBleScan () {
+
+        if (mBluetoothLeScanner != null && isScanning) {
+            isScanning = false;
+            mBluetoothLeScanner.stopScan(mScanCallback);
+        }
+
 
     }
 
@@ -153,6 +157,20 @@ public class MainActivity extends AppCompatActivity {
                 requestEnableBluetooth();
             }
         }
+
+    }
+
+    @Override
+    protected void onStop () {
+        super.onStop();
+        stopBleScan();
+        if (!bleScanExecutor.isShutdown()) {
+            bleScanExecutor.shutdownNow();
+        }
+        //clean resources
+        bleScanExecutor = null;
+        mScanCallback = null;
+        mBluetoothLeScanner = null;
 
     }
 
