@@ -13,15 +13,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,9 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
-    //private ScanFilter mScanFilter;
     private ScanSettings mScanSettings;
-    private ExecutorService bleScanExecutor;
     private ScanCallback mScanCallback;
 
     @Override
@@ -48,11 +44,24 @@ public class MainActivity extends AppCompatActivity {
 
         setBluetoothComponents();
 
-        if (isLocPermissionGranted()) {
-            startBleScan();
-        } else {
-            requestLocPermission();
-        }
+        /**
+         * click listeners
+         */
+
+        Button startButton = findViewById(R.id.startBtn);
+        Button stopButton = findViewById(R.id.stopBtn);
+
+        startButton.setOnClickListener(v -> {
+
+            if (isLocPermissionGranted()) {
+                startBleScan();
+            } else {
+                requestLocPermission();
+            }
+
+        });
+
+        stopButton.setOnClickListener(v -> stopBleScan());
 
     }
 
@@ -73,15 +82,16 @@ public class MainActivity extends AppCompatActivity {
      */
     private void setBluetoothComponents () {
         mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        mBluetoothAdapter = mBluetoothManager.getAdapter();
-        //mScanFilter = new ScanFilter.Builder().build();
+
+        if (mBluetoothManager != null) {
+            mBluetoothAdapter = mBluetoothManager.getAdapter();
+        }
 
         if (mBluetoothAdapter != null) {
             mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
         }
 
         mScanSettings = new ScanSettings.Builder().setScanMode(ScanSettings.MATCH_MODE_STICKY).build();
-        bleScanExecutor = Executors.newSingleThreadExecutor();
     }
 
     private void requestEnableBluetooth () {
@@ -106,19 +116,17 @@ public class MainActivity extends AppCompatActivity {
 
         if (!isScanning) {
             isScanning = true;
-            bleScanExecutor.execute(() -> mBluetoothLeScanner.startScan(null, mScanSettings, mScanCallback));
+            mBluetoothLeScanner.startScan(null, mScanSettings, mScanCallback);
         }
-
 
     }
 
     private void stopBleScan () {
 
-        if (mBluetoothLeScanner != null && isScanning) {
+        if (mBluetoothLeScanner != null && isScanning && mScanCallback != null) {
             isScanning = false;
             mBluetoothLeScanner.stopScan(mScanCallback);
         }
-
 
     }
 
@@ -139,10 +147,14 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
 
-            if (permissions[ 0 ].equals(PackageManager.PERMISSION_DENIED)) {
-                requestLocPermission();
-            } else {
-                startBleScan();
+            if (grantResults.length != 0) {
+
+                if (grantResults[ 0 ] == PackageManager.PERMISSION_DENIED) {
+                    requestLocPermission();
+                } else {
+                    startBleScan();
+                }
+
             }
 
         }
@@ -164,14 +176,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop () {
         super.onStop();
         stopBleScan();
-        if (!bleScanExecutor.isShutdown()) {
-            bleScanExecutor.shutdownNow();
-        }
+    }
+
+    @Override
+    protected void onDestroy () {
+        super.onDestroy();
         //clean resources
-        bleScanExecutor = null;
         mScanCallback = null;
         mBluetoothLeScanner = null;
-
     }
 
 }
