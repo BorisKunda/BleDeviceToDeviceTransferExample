@@ -32,21 +32,22 @@ public class LsMainActivity extends AppCompatActivity {
         setFragments();
         initVM();
         observeLiveData(mLsViewModel);
+
         mLsViewModel.openSourceTargetSelectionScreen();
         //mLsViewModel
     }
 
     private void initVM () {
-        mLsViewModel = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(LsViewModel.class);
+        mLsViewModel = new ViewModelProvider(this).get(LsViewModel.class);
     }
 
     private void observeLiveData (LsViewModel iLsViewModel) {
 
+        iLsViewModel.getOpenSourceTargetSelectionScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSourceTargetSelectionScreenFragment).commit());
+
         iLsViewModel.getOpenBleScannedDevicesListSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mBleScannedDevicesListFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
 
         iLsViewModel.getOpenSelectedTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSelectedTargetDeviceScreenFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
-
-        iLsViewModel.getOpenSourceTargetSelectionScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSourceTargetSelectionScreenFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
 
         iLsViewModel.getOpenTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mTargetDeviceScreenFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
 
