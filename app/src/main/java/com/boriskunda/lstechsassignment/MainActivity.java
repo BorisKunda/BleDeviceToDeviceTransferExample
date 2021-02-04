@@ -3,7 +3,11 @@ package com.boriskunda.lstechsassignment;
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -29,39 +33,37 @@ import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity {
 
-    //constants:
+
     private final static int ENABLE_BLUETOOTH_REQUEST_CODE = 1;
     private final static int LOCATION_PERMISSION_REQUEST_CODE = 2;
-
     private final String locPermission = Manifest.permission.ACCESS_FINE_LOCATION;
-
     private boolean isScanning = false;
-
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothGatt mBluetoothGatt;
     private BluetoothLeScanner mBluetoothLeScanner;
     private ScanSettings mScanSettings;
     private ScanCallback mScanCallback;
     private ScanFilter mScanFilter;
+    private BluetoothGattCallback mBluetoothGattCallback;
+    private BluetoothDevice mSelectedBluetoothDevice;
     private TextView deviceNameTv;
+    private Button mStartBtn, mStopBtn;
+    private ImageView mConnectBleBtnIv;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initUi();
         setBluetoothComponents();
 
-        deviceNameTv = findViewById(R.id.device_name_tv);
-
         /**
-         * click listeners
+         * Click listeners
          */
-        Button startButton = findViewById(R.id.startBtn);
-        Button stopButton = findViewById(R.id.stopBtn);
-        ImageView connectBleBtnIv = findViewById(R.id.bleBtnIv);
 
-        startButton.setOnClickListener(v -> {
+        mStartBtn.setOnClickListener(v -> {
 
             if (isLocPermissionGranted()) {
                 startBleScan();
@@ -71,29 +73,20 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
-        stopButton.setOnClickListener(v -> {
+        mStopBtn.setOnClickListener(v -> {
             stopBleScan();
             deviceNameTv.setText("");
-        } );
-
-        connectBleBtnIv.setOnClickListener(v -> {
-
-            stopBleScan();
-
-
         });
 
-    }
+        mConnectBleBtnIv.setOnClickListener(v -> {
 
-    @Override
-    protected void onResume () {
-        super.onResume();
-
-        if (mBluetoothAdapter != null) {
-            if (!mBluetoothAdapter.isEnabled()) {
-                requestEnableBluetooth();
+            if (isScanning) {
+                stopBleScan();
             }
-        }
+
+            connectToBleDevice(mSelectedBluetoothDevice);
+
+        });
 
     }
 
@@ -126,19 +119,24 @@ public class MainActivity extends AppCompatActivity {
 
         mScanFilter = new ScanFilter.Builder().setDeviceName("Galaxy S7").build();//todo make it work for any device
 
-        mScanCallback = new ScanCallback() {
+        if (mScanCallback == null) {
+            mScanCallback = new ScanCallback() {
 
-            @Override
-            public void onScanResult (int callbackType, ScanResult result) {
-                super.onScanResult(callbackType, result);
+                @Override
+                public void onScanResult (int callbackType, ScanResult result) {
+                    super.onScanResult(callbackType, result);
 
-                Log.i("BLE SCAN STATUS:", " scanning ");
-                Log.i("BLE SCAN RESULT:", " " + result.getDevice().getName());
+                    Log.i("BLE SCAN STATUS:", " scanning ");
+                    Log.i("BLE SCAN RESULT:", " " + result.getDevice().getName());
 
-                deviceNameTv.setText(result.getDevice().getName());
+                    mSelectedBluetoothDevice = result.getDevice();
 
-            }
-        };
+                    deviceNameTv.setText(result.getDevice().getName());
+
+                }
+            };
+        }
+
 
         if (!isScanning) {
             isScanning = true;
@@ -152,6 +150,40 @@ public class MainActivity extends AppCompatActivity {
         if (mBluetoothLeScanner != null && isScanning && mScanCallback != null) {
             isScanning = false;
             mBluetoothLeScanner.stopScan(mScanCallback);
+        }
+
+    }
+
+    private void connectToBleDevice (BluetoothDevice iBluetoothDevice) {
+
+        if (mBluetoothGattCallback == null) {
+
+            mBluetoothGattCallback = new BluetoothGattCallback() {
+
+                @Override
+                public void onConnectionStateChange (BluetoothGatt gatt, int status, int newState) {
+                    super.onConnectionStateChange(gatt, status, newState);
+
+                    mBluetoothGatt = gatt;
+
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                        if (newState == BluetoothProfile.STATE_CONNECTED) {
+                            Log.i("BluetoothGattCallback", "Successfully connected to Galaxy S7");
+                        } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                            Log.i("BluetoothGattCallback", "Disconnected from Galaxy S7");
+                            gatt.close();
+                        }
+                    } else {
+                        Log.w("BluetoothGattCallback", "Oops! Something went wrong.");
+                    }
+
+                }
+            };
+
+        }
+
+        if (iBluetoothDevice != null) {
+            iBluetoothDevice.connectGatt(this, false, mBluetoothGattCallback);
         }
 
     }
@@ -192,6 +224,29 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == ENABLE_BLUETOOTH_REQUEST_CODE) {
             if (resultCode != Activity.RESULT_OK) {
+                requestEnableBluetooth();
+            }
+        }
+
+    }
+
+    private void initUi () {
+        mStartBtn = findViewById(R.id.startBtn);
+        mStopBtn = findViewById(R.id.stopBtn);
+        mConnectBleBtnIv = findViewById(R.id.bleBtnIv);
+        deviceNameTv = findViewById(R.id.device_name_tv);
+    }
+
+    /**
+     * Lifecycle methods
+     */
+
+    @Override
+    protected void onResume () {
+        super.onResume();
+
+        if (mBluetoothAdapter != null) {
+            if (!mBluetoothAdapter.isEnabled()) {
                 requestEnableBluetooth();
             }
         }
