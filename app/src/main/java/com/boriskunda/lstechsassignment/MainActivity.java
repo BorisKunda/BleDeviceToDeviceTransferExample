@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
@@ -14,12 +15,17 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothLeScanner mBluetoothLeScanner;
     private ScanSettings mScanSettings;
     private ScanCallback mScanCallback;
+    private ScanFilter mScanFilter;
+    private TextView deviceNameTv;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -44,12 +52,14 @@ public class MainActivity extends AppCompatActivity {
 
         setBluetoothComponents();
 
+        deviceNameTv = findViewById(R.id.device_name_tv);
+
         /**
          * click listeners
          */
-
         Button startButton = findViewById(R.id.startBtn);
         Button stopButton = findViewById(R.id.stopBtn);
+        ImageView connectBleBtnIv = findViewById(R.id.bleBtnIv);
 
         startButton.setOnClickListener(v -> {
 
@@ -61,7 +71,17 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
-        stopButton.setOnClickListener(v -> stopBleScan());
+        stopButton.setOnClickListener(v -> {
+            stopBleScan();
+            deviceNameTv.setText("");
+        } );
+
+        connectBleBtnIv.setOnClickListener(v -> {
+
+            stopBleScan();
+
+
+        });
 
     }
 
@@ -91,7 +111,6 @@ public class MainActivity extends AppCompatActivity {
             mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
         }
 
-        mScanSettings = new ScanSettings.Builder().setScanMode(ScanSettings.MATCH_MODE_STICKY).build();
     }
 
     private void requestEnableBluetooth () {
@@ -103,20 +122,27 @@ public class MainActivity extends AppCompatActivity {
 
     private void startBleScan () {
 
+        mScanSettings = new ScanSettings.Builder().setScanMode(ScanSettings.MATCH_MODE_STICKY).build();
+
+        mScanFilter = new ScanFilter.Builder().setDeviceName("Galaxy S7").build();//todo make it work for any device
+
         mScanCallback = new ScanCallback() {
 
             @Override
             public void onScanResult (int callbackType, ScanResult result) {
                 super.onScanResult(callbackType, result);
 
-                Log.d("BLE SCAN STATUS:", " scanning ");
+                Log.i("BLE SCAN STATUS:", " scanning ");
+                Log.i("BLE SCAN RESULT:", " " + result.getDevice().getName());
+
+                deviceNameTv.setText(result.getDevice().getName());
 
             }
         };
 
         if (!isScanning) {
             isScanning = true;
-            mBluetoothLeScanner.startScan(null, mScanSettings, mScanCallback);
+            mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(mScanFilter)), mScanSettings, mScanCallback);
         }
 
     }
