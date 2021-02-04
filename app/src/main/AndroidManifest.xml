@@ -17,7 +17,7 @@
         android:roundIcon="@drawable/ic_bluetooth"
         android:supportsRtl="true"
         android:theme="@style/Theme.LsTechsAssignment">
-        <activity android:name=".LsMainActivity">
+        <activity android:name=".ui.LsMainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
