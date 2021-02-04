@@ -13,6 +13,8 @@ import com.boriskunda.lstechsassignment.ui.fragments.SourceTargetSelectionScreen
 import com.boriskunda.lstechsassignment.ui.fragments.TargetDeviceScreenFragment;
 import com.boriskunda.lstechsassignment.vm.LsViewModel;
 
+import static com.boriskunda.lstechsassignment.utils.LsConstants.MAIN_FRAGMENT_BACKSTACK;
+
 public class LsMainActivity extends AppCompatActivity {
 
     private BleScannedDevicesListFragment mBleScannedDevicesListFragment;//yellow
@@ -23,7 +25,6 @@ public class LsMainActivity extends AppCompatActivity {
     private LsViewModel mLsViewModel;
 
     @Override
-
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -31,8 +32,8 @@ public class LsMainActivity extends AppCompatActivity {
         setFragments();
         initVM();
         observeLiveData(mLsViewModel);
-
-
+        mLsViewModel.openSourceTargetSelectionScreen();
+        //mLsViewModel
     }
 
     private void initVM () {
@@ -41,13 +42,13 @@ public class LsMainActivity extends AppCompatActivity {
 
     private void observeLiveData (LsViewModel iLsViewModel) {
 
-        iLsViewModel.getOpenBleScannedDevicesListSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mBleScannedDevicesListFragment).commit());
+        iLsViewModel.getOpenBleScannedDevicesListSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mBleScannedDevicesListFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
 
-        iLsViewModel.getOpenSelectedTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSelectedTargetDeviceScreenFragment).commit());
+        iLsViewModel.getOpenSelectedTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSelectedTargetDeviceScreenFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
 
-        iLsViewModel.getOpenSourceTargetSelectionScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSourceTargetSelectionScreenFragment).commit());
+        iLsViewModel.getOpenSourceTargetSelectionScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSourceTargetSelectionScreenFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
 
-        iLsViewModel.getOpenTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mTargetDeviceScreenFragment).commit());
+        iLsViewModel.getOpenTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mTargetDeviceScreenFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
 
     }
 
