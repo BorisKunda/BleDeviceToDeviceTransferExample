@@ -5,12 +5,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.boriskunda.lstechsassignment.R;
+import com.boriskunda.lstechsassignment.vm.LsViewModel;
 
 
 public class SelectedTargetDeviceScreenFragment extends Fragment {
+
+    private LsViewModel mLsViewModel;
 
     public SelectedTargetDeviceScreenFragment () {
     }
@@ -20,6 +26,12 @@ public class SelectedTargetDeviceScreenFragment extends Fragment {
                               Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_selected_target_device_screen, container, false);
+    }
+
+    @Override
+    public void onViewCreated (@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        mLsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
     }
 
 }

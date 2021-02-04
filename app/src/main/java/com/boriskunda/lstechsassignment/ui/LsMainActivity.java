@@ -34,7 +34,6 @@ public class LsMainActivity extends AppCompatActivity {
         observeLiveData(mLsViewModel);
 
         mLsViewModel.openSourceTargetSelectionScreen();
-        //mLsViewModel
     }
 
     private void initVM () {
