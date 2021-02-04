@@ -1,5 +1,5 @@
 package com.boriskunda.lstechsassignment;
 
-class BluetoothLeRepository {
+class LsRepository {
 
 }
