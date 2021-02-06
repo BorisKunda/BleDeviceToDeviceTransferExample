@@ -23,7 +23,7 @@
         android:src="@drawable/ic_target_device" />
 
     <TextView
-        android:id="@+id/selected_target_device_address_tv"
+        android:id="@+id/target_device_address_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"

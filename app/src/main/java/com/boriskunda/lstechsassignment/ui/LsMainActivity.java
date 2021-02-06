@@ -7,20 +7,17 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.boriskunda.lstechsassignment.R;
-import com.boriskunda.lstechsassignment.ui.fragments.BleScannedDevicesListFragment;
 import com.boriskunda.lstechsassignment.ui.fragments.SelectedTargetDeviceScreenFragment;
 import com.boriskunda.lstechsassignment.ui.fragments.SourceTargetSelectionScreenFragment;
 import com.boriskunda.lstechsassignment.ui.fragments.TargetDeviceScreenFragment;
+import com.boriskunda.lstechsassignment.utils.LsConstants;
 import com.boriskunda.lstechsassignment.vm.LsViewModel;
-
-import static com.boriskunda.lstechsassignment.utils.LsConstants.MAIN_FRAGMENT_BACKSTACK;
 
 public class LsMainActivity extends AppCompatActivity {
 
-    private BleScannedDevicesListFragment mBleScannedDevicesListFragment;//yellow
-    private SelectedTargetDeviceScreenFragment mSelectedTargetDeviceScreenFragment;//green
-    private SourceTargetSelectionScreenFragment mSourceTargetSelectionScreenFragment;//blue
-    private TargetDeviceScreenFragment mTargetDeviceScreenFragment;//red
+    private SelectedTargetDeviceScreenFragment mSelectedTargetDeviceScreenFragment;
+    private SourceTargetSelectionScreenFragment mSourceTargetSelectionScreenFragment;
+    private TargetDeviceScreenFragment mTargetDeviceScreenFragment;
     private FragmentManager mFragmentManager;
     private LsViewModel mLsViewModel;
 
@@ -44,11 +41,9 @@ public class LsMainActivity extends AppCompatActivity {
 
         iLsViewModel.getOpenSourceTargetSelectionScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSourceTargetSelectionScreenFragment).commit());
 
-        iLsViewModel.getOpenBleScannedDevicesListSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mBleScannedDevicesListFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
+        iLsViewModel.getOpenSelectedTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSelectedTargetDeviceScreenFragment).addToBackStack(LsConstants.MAIN_FRAGMENT_STACK).commit());
 
-        iLsViewModel.getOpenSelectedTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mSelectedTargetDeviceScreenFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
-
-        iLsViewModel.getOpenTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mTargetDeviceScreenFragment).addToBackStack(MAIN_FRAGMENT_BACKSTACK).commit());
+        iLsViewModel.getOpenTargetDeviceScreenSle().observe(this, iBoolean -> mFragmentManager.beginTransaction().replace(R.id.fr_container_ll, mTargetDeviceScreenFragment).addToBackStack(LsConstants.MAIN_FRAGMENT_STACK).commit());
 
     }
 
@@ -56,7 +51,6 @@ public class LsMainActivity extends AppCompatActivity {
 
         mFragmentManager = getSupportFragmentManager();
 
-        mBleScannedDevicesListFragment = new BleScannedDevicesListFragment();
         mSelectedTargetDeviceScreenFragment = new SelectedTargetDeviceScreenFragment();
         mSourceTargetSelectionScreenFragment = new SourceTargetSelectionScreenFragment();
         mTargetDeviceScreenFragment = new TargetDeviceScreenFragment();

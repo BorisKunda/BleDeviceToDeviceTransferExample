@@ -6,21 +6,16 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 
 import com.boriskunda.lstechsassignment.model.BleScannedDevice;
 import com.boriskunda.lstechsassignment.repo.LsRepository;
 import com.boriskunda.lstechsassignment.utils.SingleLiveEvent;
 
-import java.util.List;
-
 public class LsViewModel extends AndroidViewModel {
 
     private SingleLiveEvent<Boolean> openSourceTargetSelectionScreenSle = new SingleLiveEvent<>();
-    private SingleLiveEvent<Boolean> openBleScannedDevicesListSle = new SingleLiveEvent<>();
     private SingleLiveEvent<Boolean> openSelectedTargetDeviceScreenSle = new SingleLiveEvent<>();
     private SingleLiveEvent<Boolean> openTargetDeviceScreenSle = new SingleLiveEvent<>();
-    private LiveData<List<BleScannedDevice>> scannedDeviceListLd = new MutableLiveData<>();
     private LsRepository lsRepository;
 
     public LsViewModel (@NonNull Application application) {
@@ -37,10 +32,6 @@ public class LsViewModel extends AndroidViewModel {
         openSourceTargetSelectionScreenSle.call();
     }
 
-    public void openBleScannedDevicesList () {
-        openBleScannedDevicesListSle.call();
-    }
-
     public void openSelectedTargetDeviceScreen () {
         openSelectedTargetDeviceScreenSle.call();
     }
@@ -49,15 +40,17 @@ public class LsViewModel extends AndroidViewModel {
         openTargetDeviceScreenSle.call();
     }
 
+    public LiveData<BleScannedDevice> getScannedDeviceLd () {
+        return lsRepository.getScannedDeviceMld();
+    }
+
     /**
      * getters
      */
+
+
     public SingleLiveEvent<Boolean> getOpenSourceTargetSelectionScreenSle () {
         return openSourceTargetSelectionScreenSle;
-    }
-
-    public SingleLiveEvent<Boolean> getOpenBleScannedDevicesListSle () {
-        return openBleScannedDevicesListSle;
     }
 
     public SingleLiveEvent<Boolean> getOpenSelectedTargetDeviceScreenSle () {
@@ -72,7 +65,7 @@ public class LsViewModel extends AndroidViewModel {
      * BLE logic
      **/
     public void scanForBleDevices () {
-        lsRepository.scanBle();
+        lsRepository.scanForBleDevicesFilteredByUuid();
     }
 
 }

@@ -57,7 +57,7 @@ public class SourceTargetSelectionScreenFragment extends Fragment implements Vie
         switch (v.getId()) {
             case R.id.source_iv:
             case R.id.source_tv:
-                mLsViewModel.openBleScannedDevicesList();
+                mLsViewModel.openSelectedTargetDeviceScreen();
                 break;
             //---
             case R.id.target_iv:

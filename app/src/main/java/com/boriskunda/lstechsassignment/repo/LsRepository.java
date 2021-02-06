@@ -1,38 +1,33 @@
 package com.boriskunda.lstechsassignment.repo;
 
-import android.Manifest;
 import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.os.ParcelUuid;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
 
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.boriskunda.lstechsassignment.model.BleScannedDevice;
+import com.boriskunda.lstechsassignment.utils.LsConstants;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LsRepository {
 
     private static LsRepository singleRepoInstance;
-    private final String locPermission = Manifest.permission.ACCESS_FINE_LOCATION;
     private boolean isScanning = false;
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
@@ -43,16 +38,16 @@ public class LsRepository {
     private ScanFilter mScanFilter;
     private BluetoothGattCallback mBluetoothGattCallback;
     private BluetoothDevice mSelectedBluetoothDevice;
-    private TextView deviceNameTv;
-    private Button mStartBtn, mStopBtn;
-    private ImageView mConnectBleBtnIv;
-    private Application mApplication;
-    private MutableLiveData<List<BleScannedDevice>> scannedDeviceListMld = new MutableLiveData<>();
+    private final Application mApplication;
+    private final ExecutorService mExecutorService;
+
+
+    private MutableLiveData<BleScannedDevice> scannedDeviceMld = new MutableLiveData<>();
 
     private LsRepository (Application application) {
         mApplication = application;
         setBluetoothComponents();
-
+        mExecutorService = Executors.newSingleThreadExecutor();
     }
 
     synchronized public static LsRepository getSingleRepoInstance (Application iApplication) {
@@ -80,12 +75,11 @@ public class LsRepository {
     }
 
 
-    public void scanBle () {
+    public void scanForBleDevicesFilteredByUuid () {
 
+        mScanSettings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build();
 
-        mScanSettings = new ScanSettings.Builder().setScanMode(ScanSettings.MATCH_MODE_STICKY).build();
-
-    //    mScanFilter = new ScanFilter.Builder().setDeviceName("Galaxy S7").build();//todo make it work for any device
+        mScanFilter = new ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(LsConstants.TARGET_UUID)).build();
 
         if (mScanCallback == null) {
             mScanCallback = new ScanCallback() {
@@ -94,12 +88,16 @@ public class LsRepository {
                 public void onScanResult (int callbackType, ScanResult result) {
                     super.onScanResult(callbackType, result);
 
-                    Log.i("BLE SCAN STATUS:", " scanning ");
-                    Log.i("BLE SCAN RESULT:", " " + result.getDevice().getName());
+                    scannedDeviceMld.postValue(new BleScannedDevice(result.getDevice().getName(), result.getDevice().getAddress()));
 
-                //    mSelectedBluetoothDevice = result.getDevice();
+                    Log.i("BLE SCAN STATUS:", " scanning ");
+                    Log.i("BLE SCAN RESULT:", " name:" + result.getDevice().getName());
+                    stopBleScan();
+                    //todo timeout
+                    //    mSelectedBluetoothDevice = result.getDevice();
 
                 }
+
                 //-----------
 
                 @Override
@@ -113,7 +111,9 @@ public class LsRepository {
 
         if (!isScanning) {
             isScanning = true;
-            mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(null)), mScanSettings, mScanCallback);
+
+            mExecutorService.execute(() -> mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(mScanFilter)), mScanSettings, mScanCallback));
+
         }
 
 
@@ -124,8 +124,17 @@ public class LsRepository {
         if (mBluetoothLeScanner != null && isScanning && mScanCallback != null) {
             isScanning = false;
             mBluetoothLeScanner.stopScan(mScanCallback);
+            mExecutorService.shutdownNow();
         }
 
+    }
+
+    /**
+     * getters
+     */
+
+    public MutableLiveData<BleScannedDevice> getScannedDeviceMld () {
+        return scannedDeviceMld;
     }
 
 }
