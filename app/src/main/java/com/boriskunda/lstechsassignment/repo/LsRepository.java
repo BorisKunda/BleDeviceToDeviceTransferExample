@@ -100,6 +100,13 @@ public class LsRepository {
                 //    mSelectedBluetoothDevice = result.getDevice();
 
                 }
+                //-----------
+
+                @Override
+                public void onScanFailed (int errorCode) {
+                    super.onScanFailed(errorCode);
+                    Log.e("onScanFailed", " ErrorCode: " + errorCode);
+                }
             };
         }
 
