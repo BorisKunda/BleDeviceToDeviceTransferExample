@@ -15,6 +15,7 @@ import com.boriskunda.lstechsassignment.vm.LsViewModel;
 
 public class LsMainActivity extends AppCompatActivity {
 
+    //todo permissions
     private SelectedTargetDeviceScreenFragment mSelectedTargetDeviceScreenFragment;
     private SourceTargetSelectionScreenFragment mSourceTargetSelectionScreenFragment;
     private TargetDeviceScreenFragment mTargetDeviceScreenFragment;

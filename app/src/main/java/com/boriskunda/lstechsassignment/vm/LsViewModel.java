@@ -62,10 +62,17 @@ public class LsViewModel extends AndroidViewModel {
     }
 
     /**
-     * BLE logic
+     * BLE central logic
      **/
     public void scanForBleDevices () {
         lsRepository.scanForBleDevicesFilteredByUuid();
+    }
+
+    /**
+     * BLE peripheral logic
+     **/
+    public void advertiseBleData () {
+        lsRepository.beginBleAdvertising();
     }
 
 }

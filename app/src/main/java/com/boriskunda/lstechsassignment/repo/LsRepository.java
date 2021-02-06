@@ -6,6 +6,10 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.AdvertiseCallback;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -20,8 +24,10 @@ import androidx.lifecycle.MutableLiveData;
 import com.boriskunda.lstechsassignment.model.BleScannedDevice;
 import com.boriskunda.lstechsassignment.utils.LsConstants;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,8 +35,8 @@ public class LsRepository {
 
     private static LsRepository singleRepoInstance;
     private boolean isScanning = false;
-    private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothLeScanner mBluetoothLeScanner;
     private ScanSettings mScanSettings;
@@ -40,6 +46,7 @@ public class LsRepository {
     private BluetoothDevice mSelectedBluetoothDevice;
     private final Application mApplication;
     private final ExecutorService mExecutorService;
+    private ParcelUuid mParcelUuid;
 
 
     private MutableLiveData<BleScannedDevice> scannedDeviceMld = new MutableLiveData<>();
@@ -47,7 +54,7 @@ public class LsRepository {
     private LsRepository (Application application) {
         mApplication = application;
         setBluetoothComponents();
-        mExecutorService = Executors.newSingleThreadExecutor();
+        mExecutorService = Executors.newCachedThreadPool();
     }
 
     synchronized public static LsRepository getSingleRepoInstance (Application iApplication) {
@@ -62,24 +69,30 @@ public class LsRepository {
 
     private void setBluetoothComponents () {
 
-        mBluetoothManager = (BluetoothManager) mApplication.getSystemService(Context.BLUETOOTH_SERVICE);
+        mParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_UUID));
 
-        if (mBluetoothManager != null) {
-            mBluetoothAdapter = mBluetoothManager.getAdapter();
+        BluetoothManager bluetoothManager = (BluetoothManager) mApplication.getSystemService(Context.BLUETOOTH_SERVICE);
+
+        if (bluetoothManager != null) {
+            mBluetoothAdapter = bluetoothManager.getAdapter();
         }
 
         if (mBluetoothAdapter != null) {
             mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+            mBluetoothLeAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
         }
 
     }
 
+    /**
+     * central logic
+     */
 
     public void scanForBleDevicesFilteredByUuid () {
 
         mScanSettings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build();
 
-        mScanFilter = new ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(LsConstants.TARGET_UUID)).build();
+        mScanFilter = new ScanFilter.Builder().setServiceUuid(mParcelUuid).build();
 
         if (mScanCallback == null) {
             mScanCallback = new ScanCallback() {
@@ -130,9 +143,44 @@ public class LsRepository {
     }
 
     /**
-     * getters
+     * peripheral logic
      */
 
+    public void beginBleAdvertising () {
+
+        AdvertiseSettings settings = new AdvertiseSettings.Builder()
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+                .setConnectable(true)
+                .build();
+
+        AdvertiseData data = new AdvertiseData.Builder()
+                .setIncludeDeviceName(true)
+                .addServiceUuid(mParcelUuid)
+                .addServiceData(mParcelUuid, "Data".getBytes(Charset.forName("UTF-8")))
+                .build();
+
+        AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
+
+            @Override
+            public void onStartSuccess (AdvertiseSettings settingsInEffect) {
+                super.onStartSuccess(settingsInEffect);
+            }
+
+            @Override
+            public void onStartFailure (int errorCode) {
+                Log.e("BLE", "Advertising onStartFailure: " + errorCode);
+                super.onStartFailure(errorCode);
+            }
+        };
+
+        mBluetoothLeAdvertiser.startAdvertising(settings, data, advertisingCallback);
+
+    }
+
+    /**
+     * getters
+     */
     public MutableLiveData<BleScannedDevice> getScannedDeviceMld () {
         return scannedDeviceMld;
     }
