@@ -5,9 +5,14 @@ import android.app.Application;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
+import com.boriskunda.lstechsassignment.model.BleScannedDevice;
 import com.boriskunda.lstechsassignment.repo.LsRepository;
 import com.boriskunda.lstechsassignment.utils.SingleLiveEvent;
+
+import java.util.List;
 
 public class LsViewModel extends AndroidViewModel {
 
@@ -15,6 +20,7 @@ public class LsViewModel extends AndroidViewModel {
     private SingleLiveEvent<Boolean> openBleScannedDevicesListSle = new SingleLiveEvent<>();
     private SingleLiveEvent<Boolean> openSelectedTargetDeviceScreenSle = new SingleLiveEvent<>();
     private SingleLiveEvent<Boolean> openTargetDeviceScreenSle = new SingleLiveEvent<>();
+    private LiveData<List<BleScannedDevice>> scannedDeviceListLd = new MutableLiveData<>();
     private LsRepository lsRepository;
 
     public LsViewModel (@NonNull Application application) {

@@ -34,6 +34,7 @@ public class BleScannedDevicesListFragment extends Fragment {
 
         mLsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
 
+        performScan();
 
     }
 
