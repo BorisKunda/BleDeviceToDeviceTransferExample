@@ -62,6 +62,14 @@ public class LsViewModel extends AndroidViewModel {
     }
 
     /**
+     * BLE source - target connection logic
+     */
+
+    public void connectToBleTargetDevice () {
+        lsRepository.connectToBleTarget();
+    }
+
+    /**
      * BLE central logic
      **/
     public void scanForBleDevices () {

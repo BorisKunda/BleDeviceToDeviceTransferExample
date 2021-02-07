@@ -185,7 +185,7 @@ public class LsRepository {
 
                     };
 
-                    mSelectedBluetoothDevice.connectGatt(mApplication, true, mBluetoothGattCallback);
+              //      mSelectedBluetoothDevice.connectGatt(mApplication, true, mBluetoothGattCallback);
 
                     Log.i(TAG, "onScanResult: 3" + result.getDevice().getName());
 
@@ -205,8 +205,8 @@ public class LsRepository {
             isScanning = true;
 
             //mExecutorService.execute(() -> {
-                mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(mScanFilter)), mScanSettings, mScanCallback);
-          //  });
+            mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(mScanFilter)), mScanSettings, mScanCallback);
+            //  });
 
         }
 
@@ -257,6 +257,10 @@ public class LsRepository {
 
         mBluetoothLeAdvertiser.startAdvertising(settings, data, advertisingCallback);
 
+    }
+
+    public void connectToBleTarget() {
+        mSelectedBluetoothDevice.connectGatt(mApplication, true, mBluetoothGattCallback);
     }
 
     /**

@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -19,6 +20,7 @@ public class SelectedTargetDeviceScreenFragment extends Fragment {
 
     private TextView mTargetDeviceNameTv;
     private TextView mTargetDeviceAddressTv;
+    private ImageView mTargetDeviceIv;
 
     public SelectedTargetDeviceScreenFragment () {
     }
@@ -36,6 +38,7 @@ public class SelectedTargetDeviceScreenFragment extends Fragment {
 
         mTargetDeviceNameTv = view.findViewById(R.id.selected_target_device_name_tv);
         mTargetDeviceAddressTv = view.findViewById(R.id.selected_target_device_address_tv);
+        mTargetDeviceIv = view.findViewById(R.id.target_device_iv);
 
         LsViewModel lsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
 
@@ -47,6 +50,8 @@ public class SelectedTargetDeviceScreenFragment extends Fragment {
             mTargetDeviceAddressTv.setText(iBleScannedDevice.getAddress());
 
         });
+
+        mTargetDeviceIv.setOnClickListener(v -> lsViewModel.connectToBleTargetDevice());
 
     }
 
