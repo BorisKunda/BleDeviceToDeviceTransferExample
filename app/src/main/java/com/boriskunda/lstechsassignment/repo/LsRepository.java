@@ -106,8 +106,6 @@ public class LsRepository {
                     Log.i("BLE SCAN STATUS:", " scanning ");
                     Log.i("BLE SCAN RESULT:", " name:" + result.getDevice().getName());
                     stopBleScan();
-                    //todo timeout
-                    //    mSelectedBluetoothDevice = result.getDevice();
 
                 }
 

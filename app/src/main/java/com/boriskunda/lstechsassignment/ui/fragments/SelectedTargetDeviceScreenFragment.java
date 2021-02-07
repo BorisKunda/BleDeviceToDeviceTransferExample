@@ -17,7 +17,6 @@ import com.boriskunda.lstechsassignment.vm.LsViewModel;
 
 public class SelectedTargetDeviceScreenFragment extends Fragment {
 
-    private LsViewModel mLsViewModel;
     private TextView mTargetDeviceNameTv;
     private TextView mTargetDeviceAddressTv;
 
@@ -38,11 +37,11 @@ public class SelectedTargetDeviceScreenFragment extends Fragment {
         mTargetDeviceNameTv = view.findViewById(R.id.selected_target_device_name_tv);
         mTargetDeviceAddressTv = view.findViewById(R.id.selected_target_device_address_tv);
 
-        mLsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
+        LsViewModel lsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
 
-        mLsViewModel.scanForBleDevices();
+        lsViewModel.scanForBleDevices();
 
-        mLsViewModel.getScannedDeviceLd().observe(getViewLifecycleOwner(), iBleScannedDevice -> {
+        lsViewModel.getScannedDeviceLd().observe(getViewLifecycleOwner(), iBleScannedDevice -> {
 
             mTargetDeviceNameTv.setText(iBleScannedDevice.getDeviceName());
             mTargetDeviceAddressTv.setText(iBleScannedDevice.getAddress());

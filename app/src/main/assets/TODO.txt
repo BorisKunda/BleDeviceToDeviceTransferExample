@@ -1,0 +1,4 @@
+todo
+permissions check
+bluetooth enabled check
+time out scan/advertising
