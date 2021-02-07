@@ -51,7 +51,7 @@ public class SelectedTargetDeviceScreenFragment extends Fragment {
 
         });
 
-        mTargetDeviceIv.setOnClickListener(v -> lsViewModel.connectToBleTargetDevice());
+        //mTargetDeviceIv.setOnClickListener(v -> lsViewModel.connectToBleTargetDevice());
 
     }
 

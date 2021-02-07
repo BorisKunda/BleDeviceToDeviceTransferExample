@@ -33,7 +33,7 @@ public class TargetDeviceScreenFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         mLsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
 
-        mLsViewModel.advertiseBleData();
+       // mLsViewModel.advertiseBleData();
 
     }
 

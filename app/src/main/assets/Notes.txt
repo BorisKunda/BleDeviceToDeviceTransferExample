@@ -6,3 +6,7 @@ progress bar during scan process, until target device found
 possible error handling
 remove logs/TAGS
 sanity
+
+--------------------------------------------------------------
+
+my custom uuid - "d3c4a22c-36f3-4d84-a865-2c2022bfb59d"
