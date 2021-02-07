@@ -5,7 +5,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -38,15 +41,16 @@ public class LsRepository {
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
     private BluetoothGatt mBluetoothGatt;
+    private BluetoothGattCallback mBluetoothGattCallback;
     private BluetoothLeScanner mBluetoothLeScanner;
     private ScanSettings mScanSettings;
     private ScanCallback mScanCallback;
     private ScanFilter mScanFilter;
-    private BluetoothGattCallback mBluetoothGattCallback;
     private BluetoothDevice mSelectedBluetoothDevice;
     private final Application mApplication;
     private final ExecutorService mExecutorService;
     private ParcelUuid mParcelUuid;
+    private String TAG = "BLE";
 
 
     private MutableLiveData<BleScannedDevice> scannedDeviceMld = new MutableLiveData<>();
@@ -103,18 +107,95 @@ public class LsRepository {
 
                     scannedDeviceMld.postValue(new BleScannedDevice(result.getDevice().getName(), result.getDevice().getAddress()));
 
-                    Log.i("BLE SCAN STATUS:", " scanning ");
-                    Log.i("BLE SCAN RESULT:", " name:" + result.getDevice().getName());
+                    Log.i(TAG, " scanning ");
+                    Log.i(TAG, " name:" + result.getDevice().getName());
+
+                    mSelectedBluetoothDevice = result.getDevice();
+
                     stopBleScan();
+
+                    /**
+                     * ble source -> target connection flow
+                     */
+
+                    Log.i(TAG, "onScanResult: 2" + result.getDevice().getName());
+
+                    mBluetoothGattCallback = new BluetoothGattCallback() {
+
+                        @Override
+                        public void onConnectionStateChange (BluetoothGatt gatt, int status, int newState) {
+                            super.onConnectionStateChange(gatt, status, newState);
+                            Log.i(TAG, "onConnectionStateChange: ");
+
+                            if (status == BluetoothGatt.GATT_SUCCESS) {
+
+                                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                                    Log.i(TAG, "onConnectionStateChange: Successfully connected ");
+                                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                                    Log.i(TAG, "onConnectionStateChange: Successfully disconnected ");
+                                    gatt.close();
+                                }
+
+                            } else {
+                                Log.i(TAG, "onConnectionStateChange: error" + status);
+                                gatt.close();
+                            }
+
+                        }
+
+                        //----
+
+                        @Override
+                        public void onServicesDiscovered (BluetoothGatt gatt, int status) {
+                            super.onServicesDiscovered(gatt, status);
+                            Log.i(TAG, "onServicesDiscovered: ");
+                        }
+
+                        @Override
+                        public void onCharacteristicRead (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                            super.onCharacteristicRead(gatt, characteristic, status);
+                            Log.i(TAG, "onCharacteristicRead: ");
+                        }
+
+                        @Override
+                        public void onCharacteristicWrite (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                            super.onCharacteristicWrite(gatt, characteristic, status);
+                            Log.i(TAG, "onCharacteristicWrite: ");
+                        }
+
+                        @Override
+                        public void onCharacteristicChanged (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                            super.onCharacteristicChanged(gatt, characteristic);
+                            Log.i(TAG, "onCharacteristicChanged: ");
+                        }
+
+                        @Override
+                        public void onDescriptorRead (BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+                            super.onDescriptorRead(gatt, descriptor, status);
+                            Log.i(TAG, "onDescriptorRead: ");
+                        }
+
+                        @Override
+                        public void onDescriptorWrite (BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+                            super.onDescriptorWrite(gatt, descriptor, status);
+                            Log.i(TAG, "onDescriptorWrite: ");
+                        }
+
+                        //----
+
+                    };
+
+                    mSelectedBluetoothDevice.connectGatt(mApplication, true, mBluetoothGattCallback);
+
+                    Log.i(TAG, "onScanResult: 3" + result.getDevice().getName());
 
                 }
 
-                //-----------
 
                 @Override
                 public void onScanFailed (int errorCode) {
                     super.onScanFailed(errorCode);
-                    Log.e("onScanFailed", " ErrorCode: " + errorCode);
+                    Log.i(TAG, " onScanFailed ErrorCode: " + errorCode);
                 }
             };
         }
@@ -123,7 +204,9 @@ public class LsRepository {
         if (!isScanning) {
             isScanning = true;
 
-            mExecutorService.execute(() -> mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(mScanFilter)), mScanSettings, mScanCallback));
+            //mExecutorService.execute(() -> {
+                mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(mScanFilter)), mScanSettings, mScanCallback);
+          //  });
 
         }
 
@@ -167,7 +250,7 @@ public class LsRepository {
 
             @Override
             public void onStartFailure (int errorCode) {
-                Log.e("BLE", "Advertising onStartFailure: " + errorCode);
+                Log.i(TAG, "Advertising onStartFailure: " + errorCode);
                 super.onStartFailure(errorCode);
             }
         };
