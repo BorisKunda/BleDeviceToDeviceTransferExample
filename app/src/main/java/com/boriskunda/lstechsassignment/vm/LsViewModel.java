@@ -80,7 +80,7 @@ public class LsViewModel extends AndroidViewModel {
      * BLE peripheral logic
      **/
     public void advertiseBleData () {
-        lsRepository.beginBleAdvertising();
+        //lsRepository.beginBleAdvertising();
     }
 
 }
