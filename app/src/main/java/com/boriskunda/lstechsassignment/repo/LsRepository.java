@@ -5,6 +5,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseCallback;
@@ -191,6 +193,10 @@ public class LsRepository {
 
         mBluetoothGattCallback = new BluetoothGattCallback() {
 
+            /**
+             *********************BluetoothGattCallback*********************
+             */
+
             @Override
             public void onConnectionStateChange (BluetoothGatt gatt, int status, int newState) {
                 super.onConnectionStateChange(gatt, status, newState);
@@ -200,21 +206,97 @@ public class LsRepository {
 
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
                         Log.i(TAG, "onConnectionStateChange: Successfully connected ");
+                        mBluetoothGatt = gatt;
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                         Log.i(TAG, "onConnectionStateChange: Successfully disconnected ");
+                        mBluetoothGatt = null;
                         gatt.close();
                     }
 
                 } else {
                     Log.i(TAG, "onConnectionStateChange: error" + status);
+                    mBluetoothGatt = null;
                     gatt.close();
                 }
 
             }
 
+            //--------------------------------------------------------------//
+
+            @Override
+            public void onPhyUpdate (BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
+                super.onPhyUpdate(gatt, txPhy, rxPhy, status);
+                Log.i(TAG, "onPhyUpdate: ");
+            }
+
+            @Override
+            public void onPhyRead (BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
+                super.onPhyRead(gatt, txPhy, rxPhy, status);
+                Log.i(TAG, "onPhyRead: ");
+            }
+
+            @Override
+            public void onServicesDiscovered (BluetoothGatt gatt, int status) {
+                super.onServicesDiscovered(gatt, status);
+                Log.i(TAG, "onServicesDiscovered: ");
+            }
+
+            @Override
+            public void onCharacteristicRead (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                super.onCharacteristicRead(gatt, characteristic, status);
+                Log.i(TAG, "onCharacteristicRead: ");
+            }
+
+            @Override
+            public void onCharacteristicWrite (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                super.onCharacteristicWrite(gatt, characteristic, status);
+                Log.i(TAG, "onCharacteristicWrite: ");
+            }
+
+            @Override
+            public void onCharacteristicChanged (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                super.onCharacteristicChanged(gatt, characteristic);
+                Log.i(TAG, "onCharacteristicChanged: ");
+            }
+
+            @Override
+            public void onDescriptorRead (BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+                super.onDescriptorRead(gatt, descriptor, status);
+                Log.i(TAG, "onDescriptorRead: ");
+            }
+
+            @Override
+            public void onDescriptorWrite (BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+                super.onDescriptorWrite(gatt, descriptor, status);
+                Log.i(TAG, "onDescriptorWrite: ");
+            }
+
+            @Override
+            public void onReliableWriteCompleted (BluetoothGatt gatt, int status) {
+                super.onReliableWriteCompleted(gatt, status);
+                Log.i(TAG, "onReliableWriteCompleted: ");
+            }
+
+            @Override
+            public void onReadRemoteRssi (BluetoothGatt gatt, int rssi, int status) {
+                super.onReadRemoteRssi(gatt, rssi, status);
+                Log.i(TAG, "onReadRemoteRssi: ");
+            }
+
+            @Override
+            public void onMtuChanged (BluetoothGatt gatt, int mtu, int status) {
+                super.onMtuChanged(gatt, mtu, status);
+                Log.i(TAG, "onMtuChanged: ");
+            }
+
+
+            /**
+             *********************BluetoothGattCallback*********************
+             */
+
         };
 
-        mSelectedBluetoothDevice.connectGatt(mApplication, true, mBluetoothGattCallback);
+        mSelectedBluetoothDevice.connectGatt(mApplication, false, mBluetoothGattCallback);
     }
 
     /**
