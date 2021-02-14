@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
-    tools:context=".ui.fragments.TargetDeviceScreenFragment">
+    tools:context=".ui.fragments.TargetFragment">
 
     <TextView
         android:id="@+id/target_device_name_tv"

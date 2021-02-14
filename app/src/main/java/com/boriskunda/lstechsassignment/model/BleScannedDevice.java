@@ -14,16 +14,8 @@ public class BleScannedDevice {
         return deviceName;
     }
 
-    public void setDeviceName (String iDeviceName) {
-        deviceName = iDeviceName;
-    }
-
     public String getAddress () {
         return address;
-    }
-
-    public void setAddress (String iAddress) {
-        address = iAddress;
     }
 
 }

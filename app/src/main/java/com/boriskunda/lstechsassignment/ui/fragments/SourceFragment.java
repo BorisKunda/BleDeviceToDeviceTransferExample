@@ -16,13 +16,13 @@ import com.boriskunda.lstechsassignment.R;
 import com.boriskunda.lstechsassignment.vm.LsViewModel;
 
 
-public class SelectedTargetDeviceScreenFragment extends Fragment {
+public class SourceFragment extends Fragment {
 
     private TextView mTargetDeviceNameTv;
     private TextView mTargetDeviceAddressTv;
     private ImageView mTargetDeviceIv;
 
-    public SelectedTargetDeviceScreenFragment () {
+    public SourceFragment () {
     }
 
     @Override

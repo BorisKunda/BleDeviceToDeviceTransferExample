@@ -13,11 +13,11 @@ import androidx.lifecycle.ViewModelProvider;
 import com.boriskunda.lstechsassignment.R;
 import com.boriskunda.lstechsassignment.vm.LsViewModel;
 
-public class TargetDeviceScreenFragment extends Fragment {
+public class TargetFragment extends Fragment {
 
     private LsViewModel mLsViewModel;
 
-    public TargetDeviceScreenFragment () {
+    public TargetFragment () {
 
     }
 
@@ -33,7 +33,7 @@ public class TargetDeviceScreenFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         mLsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
 
-       // mLsViewModel.advertiseBleData();
+        mLsViewModel.advertiseBleData();
 
     }
 

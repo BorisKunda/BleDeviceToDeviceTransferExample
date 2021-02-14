@@ -48,7 +48,6 @@ public class LsViewModel extends AndroidViewModel {
      * getters
      */
 
-
     public SingleLiveEvent<Boolean> getOpenSourceTargetSelectionScreenSle () {
         return openSourceTargetSelectionScreenSle;
     }
@@ -62,16 +61,13 @@ public class LsViewModel extends AndroidViewModel {
     }
 
     /**
-     * BLE source - target connection logic
-     */
+     * BLE central logic
+     **/
 
     public void connectToBleTargetDevice () {
         lsRepository.connectToBleTarget();
     }
 
-    /**
-     * BLE central logic
-     **/
     public void scanForBleDevices () {
         lsRepository.scanForBleDevicesFilteredByUuid();
     }
@@ -80,7 +76,7 @@ public class LsViewModel extends AndroidViewModel {
      * BLE peripheral logic
      **/
     public void advertiseBleData () {
-        //lsRepository.beginBleAdvertising();
+        lsRepository.startBleAdvertising();
     }
 
 }

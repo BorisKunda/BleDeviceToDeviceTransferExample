@@ -7,9 +7,13 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.le.AdvertiseCallback;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -35,28 +39,34 @@ public class LsRepository {
     private static LsRepository singleRepoInstance;
     private boolean isScanning = false;
     private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
+    private final Application mApplication;
+    private ParcelUuid mServiceParcelUuid;
+    private ParcelUuid mCharacterParcelUuid;
+    private UUID mServiceUuid;
+    private UUID mCharacterUuid;
+    private String TAG = "BLE";
+    //peripheral
+    private BluetoothGattService mService;
+    private BluetoothGattCharacteristic mImageCharacteristic;
+    private BluetoothGattServer mGattServer;
+    //central
     private BluetoothGattCallback mBluetoothGattCallback;
     private BluetoothLeScanner mBluetoothLeScanner;
+    private BluetoothDevice mSelectedBluetoothDevice;
     private ScanSettings mScanSettings;
     private ScanCallback mScanCallback;
     private ScanFilter mScanFilter;
-    private BluetoothDevice mSelectedBluetoothDevice;
-    private final Application mApplication;
-    //private final ExecutorService mExecutorService;
-    private ParcelUuid mBatteryServiceParcelUuid;
-    private ParcelUuid mBatteryLevelCharParcelUuid;
-    private UUID mBatteryServiceUuid;
-    private UUID mBatteryLevelCharUuid;
-    private String TAG = "BLE";
 
 
     private MutableLiveData<BleScannedDevice> scannedDeviceMld = new MutableLiveData<>();
 
+    public MutableLiveData<BleScannedDevice> getScannedDeviceMld () {
+        return scannedDeviceMld;
+    }
+
     private LsRepository (Application application) {
         mApplication = application;
-        setBluetoothComponents();
-        //mExecutorService = Executors.newCachedThreadPool();
+        initComponents();
     }
 
     synchronized public static LsRepository getSingleRepoInstance (Application iApplication) {
@@ -68,143 +78,27 @@ public class LsRepository {
         return singleRepoInstance;
     }
 
+    private void initComponents () {
 
-    private void setBluetoothComponents () {
+        mServiceParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_SERVICE_UUID));
+        mCharacterParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID));
 
-        mBatteryServiceParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.BATTERY_SERVICE_UUID));
-        mBatteryLevelCharParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.BATTERY_LEVEL_UUID));
-
-        mBatteryServiceUuid = UUID.fromString(LsConstants.BATTERY_SERVICE_UUID);
-        mBatteryLevelCharUuid = UUID.fromString(LsConstants.BATTERY_LEVEL_UUID);
-
-        /*
-          public static final String BATTERY_LEVEL_UUID = "00002A19-0000-1000-8000-00805f9b34fb";
-    private static final String BATTERY_SERVICE_UUID
-         */
+        mServiceUuid = UUID.fromString(LsConstants.TARGET_SERVICE_UUID);
+        mCharacterUuid = UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID);
 
         BluetoothManager bluetoothManager = (BluetoothManager) mApplication.getSystemService(Context.BLUETOOTH_SERVICE);
 
-        if (bluetoothManager != null) {
-            mBluetoothAdapter = bluetoothManager.getAdapter();
-        }
-
-        if (mBluetoothAdapter != null) {
-            mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-            mBluetoothLeAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
-        }
+        mBluetoothAdapter = bluetoothManager.getAdapter();
 
     }
 
-    /**
-     * central logic
-     */
+    /***********************************************************************************************
+     central logic
+     ************************************************************************************************/
 
     public void scanForBleDevicesFilteredByUuid () {
 
-        mScanSettings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build();
-
-        mScanFilter = new ScanFilter.Builder().setServiceUuid(mBatteryServiceParcelUuid).build();
-
-        if (mScanCallback == null) {
-            mScanCallback = new ScanCallback() {
-
-                @Override
-                public void onScanResult (int callbackType, ScanResult result) {
-                    super.onScanResult(callbackType, result);
-
-                    scannedDeviceMld.setValue(new BleScannedDevice(result.getDevice().getName(), result.getDevice().getAddress()));
-
-                    Log.i(TAG, " scanning ");
-                    Log.i(TAG, " name:" + result.getDevice().getName());
-
-                    mSelectedBluetoothDevice = result.getDevice();
-
-                    stopBleScan();
-
-                    //      mSelectedBluetoothDevice.connectGatt(mApplication, true, mBluetoothGattCallback);
-
-                }
-
-
-                @Override
-                public void onScanFailed (int errorCode) {
-                    super.onScanFailed(errorCode);
-                    Log.i(TAG, " onScanFailed ErrorCode: " + errorCode);
-                }
-
-            };
-        }
-
-
-        if (!isScanning) {
-            isScanning = true;
-
-            //mExecutorService.execute(() -> {
-            mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(mScanFilter)), mScanSettings, mScanCallback);
-            //  });
-
-        }
-
-
-    }
-
-    private void stopBleScan () {
-
-        if (mBluetoothLeScanner != null && isScanning && mScanCallback != null) {
-            isScanning = false;
-            Log.i(TAG, "stopBleScan: ");
-            mBluetoothLeScanner.stopScan(mScanCallback);
-            //mExecutorService.shutdownNow();
-        }
-
-    }
-
-    /**
-     * peripheral logic
-     */
-
-    //    public void beginBleAdvertising () {
-    //
-    //        AdvertiseSettings settings = new AdvertiseSettings.Builder()
-    //                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
-    //                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
-    //                .setConnectable(true)
-    //                .build();
-    //
-    //        AdvertiseData data = new AdvertiseData.Builder()
-    //                .setIncludeDeviceName(true)
-    //                .addServiceUuid(mParcelUuid)
-    //                .addServiceData(mParcelUuid, "Data".getBytes(Charset.forName("UTF-8")))
-    //                .build();
-    //
-    //        AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
-    //
-    //            @Override
-    //            public void onStartSuccess (AdvertiseSettings settingsInEffect) {
-    //                super.onStartSuccess(settingsInEffect);
-    //            }
-    //
-    //            @Override
-    //            public void onStartFailure (int errorCode) {
-    //                Log.i(TAG, "Advertising onStartFailure: " + errorCode);
-    //                super.onStartFailure(errorCode);
-    //            }
-    //        };
-
-    //mBluetoothLeAdvertiser.startAdvertising(settings, data, advertisingCallback);
-
-    //    }
-
-    /**
-     * ble center -> peripheral connection flow
-     */
-    public void connectToBleTarget () {
-
         mBluetoothGattCallback = new BluetoothGattCallback() {
-
-            /**
-             *********************BluetoothGattCallback*********************
-             */
 
             @Override
             public void onConnectionStateChange (BluetoothGatt gatt, int status, int newState) {
@@ -311,21 +205,103 @@ public class LsRepository {
                 Log.i(TAG, "onMtuChanged: status -- " + status);
             }
 
-
-            /**
-             *********************BluetoothGattCallback*********************
-             */
-
         };
 
+        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+
+        mScanSettings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build();
+
+        mScanFilter = new ScanFilter.Builder().setServiceUuid(mServiceParcelUuid).build();
+
+        if (mScanCallback == null) {
+            mScanCallback = new ScanCallback() {
+
+                @Override
+                public void onScanResult (int callbackType, ScanResult result) {
+                    super.onScanResult(callbackType, result);
+
+                    scannedDeviceMld.setValue(new BleScannedDevice(result.getDevice().getName(), result.getDevice().getAddress()));
+
+                    Log.i(TAG, " scanning ");
+                    Log.i(TAG, " name:" + result.getDevice().getName());
+
+                    mSelectedBluetoothDevice = result.getDevice();
+
+                    stopBleScan();
+
+                    mSelectedBluetoothDevice.connectGatt(mApplication, true, mBluetoothGattCallback);
+
+                }
+
+
+                @Override
+                public void onScanFailed (int errorCode) {
+                    super.onScanFailed(errorCode);
+                    Log.i(TAG, " onScanFailed ErrorCode: " + errorCode);
+                }
+
+            };
+        }
+
+
+        if (!isScanning) {
+            isScanning = true;
+
+            mBluetoothLeScanner.startScan(new ArrayList<>(Collections.singletonList(mScanFilter)), mScanSettings, mScanCallback);
+
+        }
+
+
+    }
+
+    private void stopBleScan () {
+
+        if (mBluetoothLeScanner != null && isScanning && mScanCallback != null) {
+            isScanning = false;
+            Log.i(TAG, "stopBleScan: ");
+            mBluetoothLeScanner.stopScan(mScanCallback);
+        }
+
+    }
+
+    public void connectToBleTarget () {
         mSelectedBluetoothDevice.connectGatt(mApplication, false, mBluetoothGattCallback);
     }
 
-    /**
-     * getters
-     */
-    public MutableLiveData<BleScannedDevice> getScannedDeviceMld () {
-        return scannedDeviceMld;
+
+    /***********************************************************************************************
+     peripheral logic
+     ************************************************************************************************/
+
+    public void startBleAdvertising () {
+
+        AdvertiseSettings settings = new AdvertiseSettings.Builder()
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+                .setConnectable(true)
+                .build();
+
+        AdvertiseData data = new AdvertiseData.Builder()
+                .setIncludeDeviceName(true)
+                .addServiceUuid(mServiceParcelUuid)
+                .build();
+
+        AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
+
+            @Override
+            public void onStartSuccess (AdvertiseSettings settingsInEffect) {
+                super.onStartSuccess(settingsInEffect);
+            }
+
+            @Override
+            public void onStartFailure (int errorCode) {
+                Log.i(TAG, "Advertising onStartFailure: " + errorCode);
+                super.onStartFailure(errorCode);
+            }
+        };
+
+        mBluetoothAdapter.getBluetoothLeAdvertiser().startAdvertising(settings, data, advertisingCallback);
+
     }
 
 }
