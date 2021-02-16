@@ -75,6 +75,11 @@ public class LsViewModel extends AndroidViewModel {
     /**
      * BLE peripheral logic
      **/
+
+    public void initPeripheral () {
+        lsRepository.setPeripheral();
+    }
+
     public void advertiseBleData () {
         lsRepository.startBleAdvertising();
     }

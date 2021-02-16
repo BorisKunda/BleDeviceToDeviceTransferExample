@@ -42,7 +42,7 @@ public class SourceFragment extends Fragment {
 
         LsViewModel lsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
 
-        lsViewModel.scanForBleDevices();
+       // lsViewModel.scanForBleDevices();
 
         lsViewModel.getScannedDeviceLd().observe(getViewLifecycleOwner(), iBleScannedDevice -> {
 
@@ -51,7 +51,7 @@ public class SourceFragment extends Fragment {
 
         });
 
-        mTargetDeviceIv.setOnClickListener(v -> lsViewModel.connectToBleTargetDevice());
+     //   mTargetDeviceIv.setOnClickListener(v -> lsViewModel.connectToBleTargetDevice());
 
     }
 

@@ -8,13 +8,13 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
-import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -39,16 +39,18 @@ public class LsRepository {
     private static LsRepository singleRepoInstance;
     private boolean isScanning = false;
     private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothManager mBluetoothManager;
     private final Application mApplication;
     private ParcelUuid mServiceParcelUuid;
     private ParcelUuid mCharacterParcelUuid;
     private UUID mServiceUuid;
-    private UUID mCharacterUuid;
+    private UUID mCharacteristicUuid;
     private String TAG = "BLE";
     //peripheral
     private BluetoothGattService mService;
     private BluetoothGattCharacteristic mImageCharacteristic;
     private BluetoothGattServer mGattServer;
+    private BluetoothGattServerCallback mBluetoothGattServerCallback;
     //central
     private BluetoothGattCallback mBluetoothGattCallback;
     private BluetoothLeScanner mBluetoothLeScanner;
@@ -80,15 +82,15 @@ public class LsRepository {
 
     private void initComponents () {
 
-        mServiceParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_SERVICE_UUID));
-        mCharacterParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID));
-
-        mServiceUuid = UUID.fromString(LsConstants.TARGET_SERVICE_UUID);
-        mCharacterUuid = UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID);
-
-        BluetoothManager bluetoothManager = (BluetoothManager) mApplication.getSystemService(Context.BLUETOOTH_SERVICE);
-
-        mBluetoothAdapter = bluetoothManager.getAdapter();
+      //  mServiceParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_SERVICE_UUID));
+      //  mCharacterParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID));
+//
+      //  mServiceUuid = UUID.fromString(LsConstants.TARGET_SERVICE_UUID);
+      //  mCharacteristicUuid = UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID);
+//
+      //  mBluetoothManager = (BluetoothManager) mApplication.getSystemService(Context.BLUETOOTH_SERVICE);
+//
+      //  mBluetoothAdapter = mBluetoothManager.getAdapter();
 
     }
 
@@ -214,6 +216,7 @@ public class LsRepository {
         mScanFilter = new ScanFilter.Builder().setServiceUuid(mServiceParcelUuid).build();
 
         if (mScanCallback == null) {
+            /**source callback*/
             mScanCallback = new ScanCallback() {
 
                 @Override
@@ -273,6 +276,50 @@ public class LsRepository {
      peripheral logic
      ************************************************************************************************/
 
+    public void setPeripheral () {
+
+        // create the Service
+        mService = new BluetoothGattService(mServiceUuid, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+
+        mImageCharacteristic = new BluetoothGattCharacteristic(mCharacteristicUuid,
+                (BluetoothGattCharacteristic.PROPERTY_READ |
+                        BluetoothGattCharacteristic.PROPERTY_WRITE |
+                        BluetoothGattCharacteristic.PROPERTY_INDICATE),
+                (BluetoothGattCharacteristic.PERMISSION_READ |
+                        BluetoothGattCharacteristic.PERMISSION_WRITE));
+
+        // add the Characteristic to the Service
+        mService.addCharacteristic(mImageCharacteristic);
+
+        /**target callback*/
+        mBluetoothGattServerCallback = new BluetoothGattServerCallback() {
+
+            @Override
+            public void onConnectionStateChange (BluetoothDevice device, int status, int newState) {
+                super.onConnectionStateChange(device, status, newState);
+            }
+
+            @Override
+            public void onCharacteristicReadRequest (BluetoothDevice device, int requestId, int offset, BluetoothGattCharacteristic characteristic) {
+                super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
+            }
+
+            @Override
+            public void onCharacteristicWriteRequest (BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
+                super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
+            }
+
+            @Override
+            public void onExecuteWrite (BluetoothDevice device, int requestId, boolean execute) {
+                super.onExecuteWrite(device, requestId, execute);
+            }
+        };
+
+        mGattServer = mBluetoothManager.openGattServer(mApplication, mBluetoothGattServerCallback);
+
+
+    }
+
     public void startBleAdvertising () {
 
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
@@ -291,17 +338,23 @@ public class LsRepository {
             @Override
             public void onStartSuccess (AdvertiseSettings settingsInEffect) {
                 super.onStartSuccess(settingsInEffect);
+                Log.i(TAG, "Advertising onStartSuccess: ");
             }
 
             @Override
             public void onStartFailure (int errorCode) {
-                Log.i(TAG, "Advertising onStartFailure: " + errorCode);
                 super.onStartFailure(errorCode);
+                Log.e(TAG, "Advertising onStartFailure: " + errorCode);
+
             }
         };
 
         mBluetoothAdapter.getBluetoothLeAdvertiser().startAdvertising(settings, data, advertisingCallback);
 
     }
+
+    /*
+
+     */
 
 }
