@@ -33,8 +33,8 @@ public class TargetFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         mLsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
 
-        //mLsViewModel.initPeripheral();
-        //mLsViewModel.advertiseBleData();
+        mLsViewModel.initPeripheral();
+        mLsViewModel.advertiseBleData();
 
     }
 

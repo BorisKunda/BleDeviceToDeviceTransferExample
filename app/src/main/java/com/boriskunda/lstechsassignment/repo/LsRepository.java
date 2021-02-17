@@ -6,7 +6,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
@@ -45,7 +44,7 @@ public class LsRepository {
     private ParcelUuid mCharacterParcelUuid;
     private UUID mServiceUuid;
     private UUID mCharacteristicUuid;
-    private String TAG = "BLE";
+    private final String TAG = "BLE";
     //peripheral
     private BluetoothGattService mService;
     private BluetoothGattCharacteristic mImageCharacteristic;
@@ -82,15 +81,15 @@ public class LsRepository {
 
     private void initComponents () {
 
-      //  mServiceParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_SERVICE_UUID));
-      //  mCharacterParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID));
-//
-      //  mServiceUuid = UUID.fromString(LsConstants.TARGET_SERVICE_UUID);
-      //  mCharacteristicUuid = UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID);
-//
-      //  mBluetoothManager = (BluetoothManager) mApplication.getSystemService(Context.BLUETOOTH_SERVICE);
-//
-      //  mBluetoothAdapter = mBluetoothManager.getAdapter();
+        mServiceParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_SERVICE_UUID));
+        mCharacterParcelUuid = new ParcelUuid(UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID));
+
+        mServiceUuid = UUID.fromString(LsConstants.TARGET_SERVICE_UUID);
+        mCharacteristicUuid = UUID.fromString(LsConstants.TARGET_CHARACTERISTIC_UUID);
+
+        mBluetoothManager = (BluetoothManager) mApplication.getSystemService(Context.BLUETOOTH_SERVICE);
+
+        mBluetoothAdapter = mBluetoothManager.getAdapter();
 
     }
 
@@ -102,109 +101,82 @@ public class LsRepository {
 
         mBluetoothGattCallback = new BluetoothGattCallback() {
 
+            /**SOURCE CONNECTION CHANGE******************************************************************/
+
             @Override
             public void onConnectionStateChange (BluetoothGatt gatt, int status, int newState) {
                 super.onConnectionStateChange(gatt, status, newState);
-                Log.i(TAG, "onConnectionStateChange: status -- " + status);
 
                 if (status == BluetoothGatt.GATT_SUCCESS) {
+                    Log.i("SOURCE", "STATE_GATT_SUCCESS");
 
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        Log.i(TAG, "onConnectionStateChange: Successfully connected ");
-
-                        //---------------------------
-
+                        Log.i("SOURCE", "STATE_CONNECTED");
                         gatt.discoverServices();
                         gatt.requestMtu(LsConstants.GATT_MAX_MTU_SIZE);
 
-                        //---------------------------
-
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        Log.i(TAG, "onConnectionStateChange: Successfully disconnected ");
+                        Log.i("SOURCE", "STATE_DISCONNECTED");
                         gatt.close();
                     }
 
                 } else {
-                    Log.i(TAG, "onConnectionStateChange: error" + status);
+                    Log.e("SOURCE", "STATE_ERROR" + status);
                     gatt.close();
                 }
 
             }
 
-            //--------------------------------------------------------------//
-
-            @Override
-            public void onPhyUpdate (BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
-                super.onPhyUpdate(gatt, txPhy, rxPhy, status);
-                Log.i(TAG, "onPhyUpdate: status -- " + status);
-            }
-
-            @Override
-            public void onPhyRead (BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
-                super.onPhyRead(gatt, txPhy, rxPhy, status);
-                Log.i(TAG, "onPhyRead: status -- " + status);
-            }
 
             @Override
             public void onServicesDiscovered (BluetoothGatt gatt, int status) {
                 super.onServicesDiscovered(gatt, status);
-                Log.i(TAG, "onServicesDiscovered: status -- " + status);
-                List<BluetoothGattService> servicesList = gatt.getServices();
 
-                if (!servicesList.isEmpty()) {
-                    for (BluetoothGattService bgs : servicesList) {
-                        Log.i("Service", "---" + bgs.getUuid());
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    Log.i("SOURCE", "SERVICE DISCOVERY_SUCCESS");
+
+                    List<BluetoothGattService> servicesList = gatt.getServices();
+
+                    if (!servicesList.isEmpty()) {
+                        for (BluetoothGattService bgs : servicesList) {
+                            Log.i("SOURCE", "---service uuid---" + bgs.getUuid());
+                        }
                     }
+
+                } else {
+                    Log.i("SOURCE", "SERVICE DISCOVERY_FAILED");
                 }
 
             }
 
             @Override
-            public void onCharacteristicRead (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                super.onCharacteristicRead(gatt, characteristic, status);
-                Log.i(TAG, "onCharacteristicRead: status -- " + status);
-            }
-
-            @Override
             public void onCharacteristicWrite (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                 super.onCharacteristicWrite(gatt, characteristic, status);
-                Log.i(TAG, "onCharacteristicWrite: status -- " + status);
+
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    Log.i("SOURCE", "CHARACTERISTIC WRITE SUCCESS");
+                } else {
+                    Log.i("SOURCE", "CHARACTERISTIC WRITE FAILURE");
+                }
+
             }
 
             @Override
             public void onCharacteristicChanged (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                 super.onCharacteristicChanged(gatt, characteristic);
-                Log.i(TAG, "onCharacteristicChanged: ");
-            }
-
-            @Override
-            public void onDescriptorRead (BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-                super.onDescriptorRead(gatt, descriptor, status);
-                Log.i(TAG, "onDescriptorRead: status -- " + status);
-            }
-
-            @Override
-            public void onDescriptorWrite (BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-                super.onDescriptorWrite(gatt, descriptor, status);
-                Log.i(TAG, "onDescriptorWrite: status -- " + status);
-            }
-
-            @Override
-            public void onReliableWriteCompleted (BluetoothGatt gatt, int status) {
-                super.onReliableWriteCompleted(gatt, status);
-                Log.i(TAG, "onReliableWriteCompleted: status -- " + status);
-            }
-
-            @Override
-            public void onReadRemoteRssi (BluetoothGatt gatt, int rssi, int status) {
-                super.onReadRemoteRssi(gatt, rssi, status);
-                Log.i(TAG, "onReadRemoteRssi: status -- " + status);
+                Log.i("SOURCE", "CHARACTERISTIC CHANGED");
             }
 
             @Override
             public void onMtuChanged (BluetoothGatt gatt, int mtu, int status) {
                 super.onMtuChanged(gatt, mtu, status);
-                Log.i(TAG, "onMtuChanged: status -- " + status);
+
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    Log.i("SOURCE", "MTU CHANGE SUCCESS");
+                } else {
+                    Log.i("SOURCE", "MTU CHANGE FAILURE");
+                }
+
             }
 
         };
@@ -216,7 +188,9 @@ public class LsRepository {
         mScanFilter = new ScanFilter.Builder().setServiceUuid(mServiceParcelUuid).build();
 
         if (mScanCallback == null) {
-            /**source callback*/
+
+            /**SCAN******************************************************************/
+
             mScanCallback = new ScanCallback() {
 
                 @Override
@@ -225,8 +199,7 @@ public class LsRepository {
 
                     scannedDeviceMld.setValue(new BleScannedDevice(result.getDevice().getName(), result.getDevice().getAddress()));
 
-                    Log.i(TAG, " scanning ");
-                    Log.i(TAG, " name:" + result.getDevice().getName());
+                    Log.i("SOURCE", "---name---" + result.getDevice().getName());
 
                     mSelectedBluetoothDevice = result.getDevice();
 
@@ -240,7 +213,7 @@ public class LsRepository {
                 @Override
                 public void onScanFailed (int errorCode) {
                     super.onScanFailed(errorCode);
-                    Log.i(TAG, " onScanFailed ErrorCode: " + errorCode);
+                    Log.i("SOURCE", "SCAN FAILURE ---error code---" + errorCode);
                 }
 
             };
@@ -291,12 +264,28 @@ public class LsRepository {
         // add the Characteristic to the Service
         mService.addCharacteristic(mImageCharacteristic);
 
-        /**target callback*/
         mBluetoothGattServerCallback = new BluetoothGattServerCallback() {
+
+            /**TARGET CONNECTION CHANGE******************************************************************/
 
             @Override
             public void onConnectionStateChange (BluetoothDevice device, int status, int newState) {
                 super.onConnectionStateChange(device, status, newState);
+
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    Log.i("TARGET", "STATE_GATT_SUCCESS");
+
+                    if (newState == BluetoothProfile.STATE_CONNECTED) {
+                        Log.i("TARGET", "STATE_CONNECTED");
+
+                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        Log.i("TARGET", "STATE_DISCONNECTED");
+                    }
+
+                } else {
+                    Log.e("TARGET", "STATE_ERROR" + status);
+                }
+
             }
 
             @Override
@@ -307,11 +296,13 @@ public class LsRepository {
             @Override
             public void onCharacteristicWriteRequest (BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
                 super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
+                Log.i("TARGET", "WRITE REQUEST");
             }
 
             @Override
             public void onExecuteWrite (BluetoothDevice device, int requestId, boolean execute) {
                 super.onExecuteWrite(device, requestId, execute);
+                Log.i("TARGET", "EXECUTE WRITE REQUEST---status---" + execute);
             }
         };
 
@@ -338,13 +329,13 @@ public class LsRepository {
             @Override
             public void onStartSuccess (AdvertiseSettings settingsInEffect) {
                 super.onStartSuccess(settingsInEffect);
-                Log.i(TAG, "Advertising onStartSuccess: ");
+                Log.i("TARGET", "AD SUCCESS");
             }
 
             @Override
             public void onStartFailure (int errorCode) {
                 super.onStartFailure(errorCode);
-                Log.e(TAG, "Advertising onStartFailure: " + errorCode);
+                Log.i("TARGET", "AD FAILURE---errorCode---" + errorCode);
 
             }
         };
@@ -353,8 +344,5 @@ public class LsRepository {
 
     }
 
-    /*
-
-     */
 
 }
