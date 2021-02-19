@@ -20,7 +20,8 @@ public class SourceFragment extends Fragment {
 
     private TextView mTargetDeviceNameTv;
     private TextView mTargetDeviceAddressTv;
-    private ImageView mTargetDeviceIv;
+    private ImageView mConnectTargetDeviceIv;
+    private ImageView mReadTargetDevice;
 
     public SourceFragment () {
     }
@@ -38,7 +39,8 @@ public class SourceFragment extends Fragment {
 
         mTargetDeviceNameTv = view.findViewById(R.id.selected_target_device_name_tv);
         mTargetDeviceAddressTv = view.findViewById(R.id.selected_target_device_address_tv);
-        mTargetDeviceIv = view.findViewById(R.id.target_device_iv);
+        mConnectTargetDeviceIv = view.findViewById(R.id.connect_target_device_iv);
+        mReadTargetDevice = view.findViewById(R.id.read_target_device_iv);
 
         LsViewModel lsViewModel = new ViewModelProvider(getActivity()).get(LsViewModel.class);
 
@@ -51,8 +53,9 @@ public class SourceFragment extends Fragment {
 
         });
 
-        mTargetDeviceIv.setOnClickListener(v -> lsViewModel.connectToBleTargetDevice());
-        
+        mConnectTargetDeviceIv.setOnClickListener(v -> lsViewModel.connectToBleTargetDevice());
+        mReadTargetDevice.setOnClickListener(v -> lsViewModel.readBleTarget());
+
     }
 
 }

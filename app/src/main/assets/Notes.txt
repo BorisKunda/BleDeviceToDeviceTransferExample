@@ -1,4 +1,5 @@
 todo
+check that device can function properly both as source and target
 permissions check
 nullability check
 bluetooth enabled check
@@ -8,6 +9,10 @@ possible error handling
 remove logs/TAGS
 sanity
 create retry ble connection flow
+proper resource disposal in line with activity lifecycle
+check if needs to be eventually auto-connect false or true
+design , lottie...
+progress bars
 --------------------------------------------------------------
 
 

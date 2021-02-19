@@ -84,4 +84,8 @@ public class LsViewModel extends AndroidViewModel {
         lsRepository.startBleAdvertising();
     }
 
+    public void readBleTarget () {
+        lsRepository.readTargetData();
+    }
+
 }

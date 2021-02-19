@@ -29,8 +29,8 @@ import com.boriskunda.lstechsassignment.model.BleScannedDevice;
 import com.boriskunda.lstechsassignment.utils.LsConstants;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 public class LsRepository {
@@ -45,17 +45,21 @@ public class LsRepository {
     private UUID mServiceUuid;
     private UUID mImageCharacteristicUuid;
     //peripheral
-    private BluetoothGattService mService;
+    private BluetoothGattService mPeripheralService;
     private BluetoothGattCharacteristic mImageCharacteristic;
     private BluetoothGattServer mGattServer;
     private BluetoothGattServerCallback mBluetoothGattServerCallback;
+    private BluetoothGatt mPeripheralBluetoothGatt;
     //central
+    private BluetoothGattCharacteristic mCentralDiscoveredImageCharacteristic;
+    private BluetoothGattService mCentralDiscoveredService;
     private BluetoothGattCallback mBluetoothGattCallback;
     private BluetoothLeScanner mBluetoothLeScanner;
     private BluetoothDevice mSelectedBluetoothDevice;
     private ScanSettings mScanSettings;
     private ScanCallback mScanCallback;
     private ScanFilter mScanFilter;
+    private BluetoothGatt mCentralBluetoothGatt;
 
 
     private MutableLiveData<BleScannedDevice> scannedDeviceMld = new MutableLiveData<>();
@@ -67,6 +71,7 @@ public class LsRepository {
     private LsRepository (Application application) {
         mApplication = application;
         initComponents();
+        Log.i("DeviceName ", android.os.Build.MODEL + "");
     }
 
     synchronized public static LsRepository getSingleRepoInstance (Application iApplication) {
@@ -113,6 +118,7 @@ public class LsRepository {
                         Log.i("SOURCE", "STATE_CONNECTED");
                         gatt.discoverServices();
                         gatt.requestMtu(LsConstants.GATT_MAX_MTU_SIZE);
+                        mCentralBluetoothGatt = gatt;
 
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                         Log.i("SOURCE", "STATE_DISCONNECTED");
@@ -122,6 +128,12 @@ public class LsRepository {
                 } else {
                     Log.e("SOURCE", "STATE_ERROR" + status);
                     gatt.close();
+
+                    //if status 133 possible reasons:
+                    //The BluetoothDevice we’re trying to connect to is no longer advertising or within Bluetooth range, and the connectGatt() call has timed out after about 30 seconds of trying to connect to it with the autoConnect argument set to false.
+                    //The firmware running on the BLE device has rejected the connection attempt by Android.
+
+
                 }
 
             }
@@ -134,13 +146,8 @@ public class LsRepository {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     Log.i("SOURCE", "SERVICE DISCOVERY_SUCCESS");
 
-                    List<BluetoothGattService> servicesList = gatt.getServices();
-
-                    if (!servicesList.isEmpty()) {
-                        for (BluetoothGattService bgs : servicesList) {
-                            Log.i("SOURCE", "---service uuid---" + bgs.getUuid());
-                        }
-                    }
+                    mCentralDiscoveredService = gatt.getService(mServiceUuid);
+                    mCentralDiscoveredImageCharacteristic = mCentralDiscoveredService.getCharacteristic(mImageCharacteristicUuid);
 
                 } else {
                     Log.i("SOURCE", "SERVICE DISCOVERY_FAILED");
@@ -164,6 +171,12 @@ public class LsRepository {
             public void onCharacteristicChanged (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                 super.onCharacteristicChanged(gatt, characteristic);
                 Log.i("SOURCE", "CHARACTERISTIC CHANGED");
+            }
+
+            @Override
+            public void onCharacteristicRead (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                super.onCharacteristicRead(gatt, characteristic, status);
+                Log.i("SOURCE", "CHARACTERISTIC READ" + Arrays.toString(characteristic.getValue()));
             }
 
             @Override
@@ -241,6 +254,9 @@ public class LsRepository {
         mSelectedBluetoothDevice.connectGatt(mApplication, false, mBluetoothGattCallback);
     }
 
+    public void readTargetData () {
+        mCentralBluetoothGatt.readCharacteristic(mCentralDiscoveredImageCharacteristic);
+    }
 
     /***********************************************************************************************
      peripheral logic
@@ -275,13 +291,15 @@ public class LsRepository {
             @Override
             public void onCharacteristicReadRequest (BluetoothDevice device, int requestId, int offset, BluetoothGattCharacteristic characteristic) {
                 super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
+                Log.i("TARGET", "READ REQUEST");
+                mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue());
             }
 
             @Override
             public void onCharacteristicWriteRequest (BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
                 super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
                 Log.i("TARGET", "WRITE REQUEST");
-                mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+                //mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
             }
 
             @Override
@@ -289,24 +307,31 @@ public class LsRepository {
                 super.onExecuteWrite(device, requestId, execute);
                 Log.i("TARGET", "EXECUTE WRITE REQUEST---status---" + execute);
             }
+
+            @Override
+            public void onMtuChanged (BluetoothDevice device, int mtu) {
+                super.onMtuChanged(device, mtu);
+                Log.i("TARGET", "MTU CHANGED---change---" + mtu);
+            }
+
         };
 
         mGattServer = mBluetoothManager.openGattServer(mApplication, mBluetoothGattServerCallback);
 
         // create the Service
-        mService = new BluetoothGattService(mServiceUuid, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        mPeripheralService = new BluetoothGattService(mServiceUuid, BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
         mImageCharacteristic = new BluetoothGattCharacteristic(mImageCharacteristicUuid,
                 (BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_NOTIFY),
                 BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE);
 
         //todo use byte buffer for it
-        mImageCharacteristic.setValue(new byte[]{1,3,5});
+        mImageCharacteristic.setValue(new byte[]{ 1, 3, 5 });
 
         // add the Characteristic to the Service
-        mService.addCharacteristic(mImageCharacteristic);
+        mPeripheralService.addCharacteristic(mImageCharacteristic);
 
-        mGattServer.addService(mService);
+        mGattServer.addService(mPeripheralService);
 
     }
 
